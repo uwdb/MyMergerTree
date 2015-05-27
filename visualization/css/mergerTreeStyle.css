@@ -1,0 +1,238 @@
+/*style for the main tree visualization*/
+.node {
+  cursor: pointer;
+}
+
+.node text {
+  font-size: 12px;
+  font-family: arial;
+}
+
+path.children {
+  fill: #DDDDDD;
+}
+
+.link {
+  fill: none;
+  stroke: #DDDDDD;
+  stroke-opacity: 0.7;
+  stroke-width: 2px;
+}
+
+.timeaxisline {
+  stroke: #FFFFFF;
+  stroke-opacity: 0.2;
+  stroke-width: 1px;
+}
+
+.timeaxislabel {
+  font-size: 14px;
+  font-family: arial;
+  fill: #DDDDDD;
+}
+
+tr, td {
+  vertical-align: top;
+}
+
+div {
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+rect {
+  stroke : none;
+  stroke-width: 1;
+  fill: #111111;
+}
+
+.topContainer {
+  font-family:arial;
+  font-size:12px;
+}
+
+.topContainer input{
+  top: 5px;
+}
+
+#svgContent {
+  align: center;
+}
+
+#panelContent {
+  background-color: white;
+  font-size: 11px;
+  font-family: arial;
+}
+
+#header{
+  background: white;
+  border: 0px;
+  border-color: gray;
+  border-style: solid;
+  margin: 1px;
+  text-align: center;
+  font-size: 30px;
+  font-weight: bold;
+  font-family: arial;
+}
+
+.d3-tip {
+  line-height: 1;
+  background: rgba(238, 238, 238, 0.9);
+  font-family: arial;
+  padding: 10px;
+  color: #000000;
+  border: 0px;
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.d3-tipPath {
+  line-height: 1;
+  background: #FFFFFF;
+  font-family: arial;
+  padding: 10px;
+  color: #000000;
+  border: 0px;
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+svgBrush {
+  font: 10px sans-serif;
+}
+
+#panelContent .brushxaxis,
+#panelContent .brushyaxis {
+  fill: black;
+  stroke: black;
+  font-size: 10px;
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+#panelContent line, #panelContent path {
+  fill: none;
+  stroke: black;
+  stroke-width: 1;
+  shape-rendering: crispEdges;
+}
+
+#panelContent .area {
+    fill: darkblue;
+    stroke-width: 0;
+}
+#panelContent .areaTop {
+    fill: lightsteelblue;
+    opacity: 0.8;
+    stroke-width: 0;
+}
+
+#panelContent .extent {
+  stroke: #fff;
+  fill: #E3C937;
+  fill-opacity: .4;
+  
+}
+#panelContent input {
+  width: 60px;
+  font-size:10px;
+  margin: 3px 0px;
+}
+.button {
+  background-color:darkblue;
+  border-radius:20px;
+  display:inline-block;
+  color:#ffffff;
+  font-family:arial;
+  font-size:12px;
+  padding: 5px 6px;
+  margin: 0px;
+}
+
+/*style for the image slider*/
+#sliderContainer {
+    font-size: 12px;
+    padding:0px;
+    margin: -12px auto auto;
+    font-family:arial;
+}
+
+#sliderContent {
+    text-align: center;
+    height:140px;
+    background-color:#ebebeb;
+    border:1px solid #898989;
+}
+
+#similarHalo {
+    font-weight: bold;
+    font-size: 13px;
+    position:relative;
+    text-align:left;
+    margin:auto;
+    top: 18px;
+    z-index: 1;
+}
+
+#sliderContent .spacing {
+    height: 8px;
+    margin: 3px 0px 0px 7px;
+    font-weight: bold;
+}
+
+#current.viewer {
+    height:140px;
+    margin: auto; /*top right bottom left*/
+    padding: 0px;
+    overflow: auto;
+    position: relative;
+    border:0px;
+    display: inline-block;
+    background-color: #ebebeb;
+}
+
+#current .item {
+    background-color:#ebebeb;
+}
+
+#current form {
+    margin-top: -13px;
+}
+#similarities.viewer {
+    height:140px;
+    margin: auto; /*top right bottom left*/
+    padding: 0px;
+    overflow: auto;
+    position: relative;
+    border:0px solid #898989;
+    border-left: 1px solid #898989;
+    display: inline-block;
+    background-color: #ebebeb;
+}
+.content-conveyor {
+    display: inline-block; 
+    position: relative;
+}
+.item {
+    width: 150px;
+    display: inline-block;
+    float:left; 
+    text-align:center;
+
+}
+
+.item svg {
+    width: 150px;
+    height: 100px;
+}
+
+.item a:hover {
+    opacity: 0.5;
+}
+
+.item .text {
+    margin-top: -8px;
+}
