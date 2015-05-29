@@ -1,0 +1,39 @@
+{
+    "profilingMode": [],
+    "logicalRa": "local nodes",
+    "language": "myrial",
+    "rawQuery": "local nodes",
+    "plan": {
+        "fragments": [
+            {
+                "operators": [
+                    {
+                        "schema": {
+                                "columnNames": 
+                                    ["grpID", "currentTime", "mass", "totalParticles"], 
+                                "columnTypes": 
+                                    ["LONG_TYPE", "LONG_TYPE", "FLOAT_TYPE", "LONG_TYPE"]
+                        },
+                        "opName": "MyriaQueryScan",
+                        "opType": "DbQueryScan",
+                        "opId": 0,
+                        "sql": ""
+                    },
+                    {
+                        "opType": "DbInsert",
+                        "argChild": 0,
+                        "opName": "MyriaStore",
+                        "argOverwriteTable": true,
+                        "opId": 1,
+                        "relationKey": {
+                            "userName": "",
+                            "relationName": "",
+                            "programName": ""
+                        }
+                    }
+                ]
+            }
+        ],
+        "type": "SubQuery"
+    }
+}
