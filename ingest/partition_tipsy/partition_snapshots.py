@@ -1,5 +1,6 @@
-import sys, os, json, time
-lib_path = os.path.abspath(os.path.join('raco', 'myria-python'))
+import sys, os, json
+import time
+lib_path = os.path.abspath(os.path.join('../../libs/raco', '../../libs/myria-python'))
 sys.path.append(lib_path)
 from raco.catalog import FromFileCatalog
 import raco.myrial.parser as parser
@@ -11,7 +12,7 @@ from myria import MyriaSchema
 from myria import MyriaRelation
 
 #CONFIGURE: information about the datasets in Myria
-SNAPSHOT_LIST=['000102']
+SNAPSHOT_LIST=['000045','000054','000072']
 USER_NAME="jortiz"
 PROGRAM_NAME="romulustest"
 #END CONFIGURE
@@ -31,7 +32,7 @@ for i in SNAPSHOT_LIST:
 	columnTypes = [x.encode('utf-8') for x in columnTypes]
 
 	columns = zip(columnNames, columnTypes)
-	f.write("'" + current_relation + "' : " +  str(columns) + '\n');
+	f.write("'" + current_relation + "' : " +  str(columns) + ',\n');
 f.write("}" + '\n');
 f.close()
 

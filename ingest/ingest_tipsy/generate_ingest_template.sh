@@ -5,7 +5,7 @@ DATA_PATH=/disk3/jortiz16/MichaelDatasets/Romulus/romulus8.256gst2.bwBH/
 IORD=iord_2
 GRP=amiga.grp
 SIMULATION_PREFIX=romulus8.256gst2.bwBH.
-SNAPSHOT_LIST=(000045 000054 000072 000102)
+SNAPSHOT_LIST=(000045 000054 000072)
 
 # Information about the relation that will be stored in Myria
 USER_NAME=jortiz
