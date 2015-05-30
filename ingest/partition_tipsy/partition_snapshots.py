@@ -17,7 +17,7 @@ USER_NAME="jortiz"
 PROGRAM_NAME="romulustest"
 #END CONFIGURE
 
-connection = MyriaConnection(hostname = "rest.myria.cs.washington.edu", port=1776, ssl=True)
+connection = MyriaConnection(hostname = "rest.myria.cs.washington.edu", port=1776, ssl=True, execution_url="https://myria-web.appspot.com")
 
 #first get schemas, create the catalog
 f = open('schema.py', 'w')

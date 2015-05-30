@@ -87,15 +87,25 @@ else:
 
 #running connectedEdges
 print "RUNNING ITERATIVE EDGES QUERY"
-nodes_query = "T1 = [from scan(" + relation_name_prefix + "globalEdges) as n where currentTime = 1 emit currentGroup as nowGroup, currentTime, currentGroup, nextGroup, sharedParticleCount];"
-iterator = "I = [1 as i];"
-maximumTime = "maxTime = [from " + relation_name_prefix + "globalEdges emit max(currentTime) as maxT];"
-loop = "do delta = [from edges as e1," + relation_name_prefix + "globalEdges as e2, I where e1.nextGroup = e2.currentGroup and e1.currentTime+1 = e2.currentTime and e1.currentTime = I.i emit e1.nowGroup, e2.currentTime, e2.currentGroup, e2.nextGroup, e2.sharedParticleCount]; edges = distinct(delta + edges); I = [from I emit i+1 as i]; while [from I, maxTime where I.i < maxTime.maxT emit count(*) > 0];"
-final_store = "store(edges, " +relation_name_prefix + "edgesTable);"
-final_query = nodes_query + iterator + maximumTime + loop + final_store
-print final_query
-#query_status = connection.execute_program(program=nodes_query + iterator + maximumTime + loop + final_store)
-#query_id = query_status['queryId']
-#status = (connection.get_query_status(query_id))['status']
+global_edges = "scan(" + relation_name_prefix + "globalEdges)"
 
+edges = "edges = [from "+ global_edges+ " as e where currentTime = 1 emit currentGroup as nowGroup, currentTime, currentGroup, nextGroup, sharedParticleCount];"
+I = "I = [1 as i];"
+maxTime = "maxTime = [from "+ global_edges+ " as e emit max(currentTime) as maxT];"
+loop = "do delta = [from edges as e1," + global_edges + " as e2, I where e1.nextGroup = e2.currentGroup and e1.currentTime+1 = e2.currentTime and e1.currentTime = I.i emit e1.nowGroup, e2.currentTime, e2.currentGroup, e2.nextGroup, e2.sharedParticleCount]; edges = distinct(delta + edges); I = [from I emit i+1 as i]; while [from I, maxTime where I.i < maxTime.maxT emit count(*) > 0];"
+store = "store(edges, " +relation_name_prefix + "edgesTable);"
+connecting_edges = edges + I + maxTime + loop + store
+query_status = connection.execute_program(program=connecting_edges)
+query_id = query_status['queryId']
+status = (connection.get_query_status(query_id))['status']
 
+while status!='SUCCESS':
+	status = (connection.get_query_status(query_id))['status']
+	time.sleep(2);
+	if status=='ERROR':
+		break;
+
+if status=='SUCCESS':
+	print 'QUERY SUCCESS'
+else:
+	print 'QUERY ERROR'

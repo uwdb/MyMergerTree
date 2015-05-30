@@ -76,7 +76,7 @@ else:
 
 #global myrial query
 print "RUNNING GLOBAL NODES"
-global_nodes_query = "T1 = [from scan(" + relation_name_prefix + "nodesLocal) as n emit grpID, currentTime, sum(mass)*" + format(DM_SOL_UNIT, '.1f') + " as mass, sum(totalParticles) as totalParticles]; store(T1, " +  relation_name_prefix +  "nodesTable);"
+global_nodes_query = "T1 = [from scan(" + relation_name_prefix + "nodesLocal) as n emit grpID, timeStep, sum(mass)*" + format(DM_SOL_UNIT, '.1f') + " as mass, sum(totalParticles) as totalParticles]; store(T1, " +  relation_name_prefix +  "nodesTable);"
 query_status = connection.execute_program(program=global_nodes_query)
 query_id = query_status['queryId']
 status = (connection.get_query_status(query_id))['status']
