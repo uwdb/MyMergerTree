@@ -46,7 +46,7 @@ for i in SNAPSHOT_LIST:
 #prepare local_nodes schema (if needed, add more attributes in this section)
 
 #write the union at postgres layer (from template query) for local_nodes
-with open('local_nodes.json', 'r+') as data_file:    
+with open('local_nodes_template.json', 'r+') as data_file:    
     local_nodes_json_query = json.load(data_file)
     data_file.close()
 
@@ -66,12 +66,17 @@ status = (connection.get_query_status(query_id))['status']
 while status!='SUCCESS':
 	status = (connection.get_query_status(query_id))['status']
 	time.sleep(2);
-print "SUCCESS"
+	if status=='ERROR':
+		break;
+
+if status=='SUCCESS':
+	print 'QUERY SUCCESS'
+else:
+	print 'QUERY ERROR'
 
 #global myrial query
 print "RUNNING GLOBAL NODES"
-global_nodes_query = "T1 = [from scan(" + relation_name_prefix + "nodesLocal) as n emit grpID, currentTime, sum(mass)*" + format(DM_SOL_UNIT, '.1f') + " as mass, sum(totalParticles) as totalParticles]; store(T1, " +  relation_name_prefix +  "haloTable);"
-print global_nodes_query
+global_nodes_query = "T1 = [from scan(" + relation_name_prefix + "nodesLocal) as n emit grpID, currentTime, sum(mass)*" + format(DM_SOL_UNIT, '.1f') + " as mass, sum(totalParticles) as totalParticles]; store(T1, " +  relation_name_prefix +  "nodesTable);"
 query_status = connection.execute_program(program=global_nodes_query)
 query_id = query_status['queryId']
 status = (connection.get_query_status(query_id))['status']
@@ -80,8 +85,10 @@ status = (connection.get_query_status(query_id))['status']
 while status!='SUCCESS':
 	status = (connection.get_query_status(query_id))['status']
 	time.sleep(5);
-print "SUCCESS"
+	if status=='ERROR':
+		break;
 
-
-
-
+if status=='SUCCESS':
+	print 'QUERY SUCCESS'
+else:
+	print 'QUERY ERROR'

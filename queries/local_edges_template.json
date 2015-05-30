@@ -1,0 +1,47 @@
+{
+    "profilingMode": [],
+    "logicalRa": "local edges",
+    "language": "myrial",
+    "rawQuery": "local edges",
+    "plan": {
+        "fragments": [
+            {
+                "operators": [
+                    {
+                         "schema": {
+                          "columnNames": [
+                                "currentGroup",
+                                "currentTime",
+                                "nextGroup",
+                                "sharedParticles"
+                            ],
+                            "columnTypes": [
+                                "LONG_TYPE",
+                                "LONG_TYPE",
+                                "LONG_TYPE",
+                                "LONG_TYPE"
+                            ]
+                        },
+                        "opName": "MyriaQueryScan",
+                        "opType": "DbQueryScan",
+                        "opId": 0,
+                        "sql": ""
+                    },
+                    {
+                        "opType": "DbInsert",
+                        "argChild": 0,
+                        "opName": "MyriaStore",
+                        "argOverwriteTable": true,
+                        "opId": 1,
+                        "relationKey": {
+                            "userName": "",
+                            "relationName": "",
+                            "programName": ""
+                        }
+                    }
+                ]
+            }
+        ],
+        "type": "SubQuery"
+    }
+}

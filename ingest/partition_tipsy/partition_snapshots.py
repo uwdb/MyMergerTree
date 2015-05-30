@@ -26,10 +26,8 @@ for i in SNAPSHOT_LIST:
 	current_relation = USER_NAME + ":" + PROGRAM_NAME + ":" + "cosmo" + i;
 	current_schema = (MyriaRelation(relation=current_relation, connection=connection).schema.to_dict())
 
-	columnNames = current_schema['columnNames']
-	columnNames = [x.encode('utf-8') for x in columnNames]
-	columnTypes = current_schema['columnTypes']
-	columnTypes = [x.encode('utf-8') for x in columnTypes]
+	columnNames = [x.encode('utf-8') for x in current_schema['columnNames']]
+	columnTypes = [x.encode('utf-8') for x in current_schema['columnTypes']]
 
 	columns = zip(columnNames, columnTypes)
 	f.write("'" + current_relation + "' : " +  str(columns) + ',\n');
@@ -65,4 +63,10 @@ for i in SNAPSHOT_LIST:
 	while status!='SUCCESS':
 		status = (connection.get_query_status(query_id))['status']
 		time.sleep(5);
-	print "SUCCESS"
+	if status=='ERROR':
+		break;
+
+	if status=='SUCCESS':
+		print 'QUERY SUCCESS'
+	else:
+		print 'QUERY ERROR'
