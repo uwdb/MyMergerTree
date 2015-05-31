@@ -81,9 +81,10 @@ else:
 
 print "PART 2"
 ranking = "apply RunningRank(haloGrp) {  [0 as _rank, -1 as _grp]; [case when haloGrp = _grp then _rank + 1 else 1 end, case when haloGrp = _grp then _grp else haloGrp end]; _rank;};"
-rankedEdges = "rankedEdges = [from scan(" + table_prefix + "edgesConnectedSplitSort) as e emit e.nowGroup, e.currentTime,  RunningRank(e.nextGroup) as splitOrder, e.currentGroup, e.nextGroup, e.sharedParticleCount];"
-edgesTree = "edges = [from rankedEdges where splitOrder = 1 emit nowGroup, currentTime, currentGroup, nextGroup, sharedParticleCount]; store(edges," + table_prefix + "edgesTree);"
-query_status =  connection.execute_program(program=ranking + rankedEdges + edgesTree)
+rankedEdges = "rankedEdges = [from scan(" + table_prefix + "edgesConnectedSplitSort) as e emit e.*,  RunningRank(e.nextGroup) as splitOrder];"
+edgesTree = "edges = [from rankedEdges as e where splitOrder = 1 emit e.*];"
+store = "store(edges," + table_prefix + "edgesFinal);"
+query_status =  connection.execute_program(program=ranking + rankedEdges + edgesTree + store)
 query_id = query_status['queryId']
 status = (connection.get_query_status(query_id))['status']
 
@@ -102,7 +103,7 @@ else:
 #Second Query: take care of the splits -- 
 print "/*****FINDING PROGENITORS QUERY*****/";
 print "PART 1"
-edges = "edges = scan(" + table_prefix + "edgesTree);"
+edges = "edges = scan(" + table_prefix + "edgesFinal);"
 progenitors = "progenitors = [from edges where currentTime = 1 emit nowGroup, currentTime as currentTime, currentGroup];"
 maxShared = "maxShared = [from edges emit nowGroup, currentTime, currentGroup, max(sharedParticleCount) as maxSharedParticleCount];"
 I = "I = [2 as i];"
@@ -125,7 +126,7 @@ else:
 	print 'QUERY ERROR'
 
 print "PART 2"
-edges = "edges = scan(" + table_prefix + "edgesTree);"
+edges = "edges = scan(" + table_prefix + "edgesFinal);"
 progenitors = "progenitors = scan(" + table_prefix + "progen);"
 haloTable1 = "haloTable1 = [from scan("+ table_prefix+"nodesTable) h, edges e where h.grpID = e.currentGroup and h.timeStep = e.currentTime emit e.nowGroup, h.*];"
 haloTable2 = "haloTable2 =  [from scan(" + table_prefix + "nodesTable) h, edges e where h.grpID = e.nextGroup and h.timeStep = e.currentTime+1 emit e.nowGroup, h.*];"
@@ -150,18 +151,18 @@ else:
 
 print "/*****MAJOR MERGERS QUERY*****/";
 
-edgesTree = table_prefix + "edgesTree"
+edgesFinal = table_prefix + "edgesFinal"
 haloTableProg = table_prefix + "haloTableProg"
 
 #first get schemas, create the catalog
 f = open('schema.py', 'w')
 f.write("{" + '\n');
 #--nodes
-current_schema = (MyriaRelation(relation= edgesTree, connection=connection).schema.to_dict())
+current_schema = (MyriaRelation(relation= edgesFinal, connection=connection).schema.to_dict())
 columnNames = [x.encode('utf-8') for x in current_schema['columnNames']]
 columnTypes = [x.encode('utf-8') for x in current_schema['columnTypes']]
 columns = zip(columnNames, columnTypes)
-f.write("'" + edgesTree + "' : " +  str(columns) + ',\n');
+f.write("'" + edgesFinal + "' : " +  str(columns) + ',\n');
 #--edges
 current_schema = (MyriaRelation(relation=haloTableProg, connection=connection).schema.to_dict())
 columnNames = [x.encode('utf-8') for x in current_schema['columnNames']]
@@ -174,7 +175,7 @@ f.close()
 catalog = FromFileCatalog.load_from_file("schema.py")
 _parser = parser.Parser()
 
-current_query = "sortByChildMass = [from scan("+ edgesTree + ") as e, scan(" + haloTableProg+ ") as h where timeStep = currentTime + 1 and h.grpID = e.nextGroup and h.nowGroup = e.nowGroup emit nowGroup, currentTime, currentGroup, nextGroup, mass as nextGroupMass]; store(sortByChildMass," + table_prefix + "edgesWithMassSort);"
+current_query = "sortByChildMass = [from scan("+ edgesFinal + ") as e, scan(" + haloTableProg+ ") as h where timeStep = currentTime + 1 and h.grpID = e.nextGroup and h.nowGroup = e.nowGroup emit nowGroup, currentTime, currentGroup, nextGroup, mass as nextGroupMass]; store(sortByChildMass," + table_prefix + "edgesWithMassSort);"
 
 statement_list = _parser.parse(current_query);
 processor = interpreter.StatementProcessor(catalog, True)
@@ -206,3 +207,31 @@ else:
 
 #MASS RATIO -- 
 
+runningRank = "apply RunningRank(haloGrp) { [0 as _rank, 0 as _grp]; [case when haloGrp = _grp then _rank + 1 else 1 end, case when haloGrp = _grp then _grp else haloGrp end]; _rank;};"
+haloTable = "haloTable = scan(" + table_prefix + "haloTableProg);"
+rankedEdges = "rankedEdges =  [from scan(" + table_prefix + "edgesWithMassSort) as e emit e.nowGroup, e.currentTime,  RunningRank(e.currentGroup) as splitOrder, e.currentGroup, e.nextGroup, e.nextGroupMass];"
+edges1 = "edges1 = [from rankedEdges where splitOrder = 1 emit *];"
+edges2 = "edges2 = [from rankedEdges where splitOrder = 2 emit *];"
+bothMaxGroups = " bothMaxGroups = [from edges1 e1, edges2 e2 where e1.nowGroup = e2.nowGroup and e1.currentTime = e2.currentTime and e1.currentGroup = e2.currentGroup emit e1.nowGroup, e1.currentTime, e1.currentGroup, e1.nextGroup as e1NextGroup, e2.nextGroup as e2NextGroup, (e1.nextGroupMass/e2.nextGroupMass) as massRatio];"
+maxMasses1 = "maxMasses1 = [from bothMaxGroups g, haloTable h where h.nowGroup = g.nowGroup and h.grpID = g.e1NextGroup and h.timeStep = g.currentTime+1 emit h.*, g.massRatio*1.0 as massRatio];"
+maxMasses2 = "maxMasses2 = [from bothMaxGroups g, haloTable h where h.nowGroup = g.nowGroup and h.grpID = g.e2NextGroup and h.timeStep = g.currentTime+1 emit h.*, g.massRatio*1.0 as massRatio];"
+maxMasses = "maxMasses = maxMasses1 + maxMasses2;"
+remainingHalos = "remainingHalos = diff([from haloTable h emit h.*], [from maxMasses h emit h.*]);"
+remainingHalosMass = "remainingHalosMass = [from remainingHalos h emit h.*, -1+0.0 as massRatio];"
+newHaloTable = "newHaloTable = remainingHalosMass + maxMasses;"
+store = "store(newHaloTable, " + table_prefix + "haloTableFinal);"
+
+query_status = connection.execute_program(program=runningRank + haloTable + rankedEdges + edges1 + edges2 + bothMaxGroups + maxMasses1 + maxMasses2 + maxMasses + remainingHalos + remainingHalosMass + newHaloTable+ store)
+query_id = query_status['queryId']
+status = (connection.get_query_status(query_id))['status']
+
+while status!='SUCCESS':
+	status = (connection.get_query_status(query_id))['status']
+	time.sleep(2);
+	if status=='ERROR':
+		break;
+
+if status=='SUCCESS':
+	print 'QUERY SUCCESS 2/2'
+else:
+	print 'QUERY ERROR'
