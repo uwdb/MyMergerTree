@@ -12,7 +12,7 @@ from myria import MyriaSchema
 from myria import MyriaRelation
 
 #CONFIGURE: information about the datasets in Myria
-SNAPSHOT_LIST=['000045','000054','000072']
+SNAPSHOT_LIST=['002560','002552','002432']
 USER_NAME="jortiz"
 PROGRAM_NAME="romulustest"
 #END CONFIGURE

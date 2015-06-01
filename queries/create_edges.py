@@ -11,12 +11,12 @@ from myria import MyriaConnection
 from myria import MyriaSchema
 from myria import MyriaRelation
 
-#CONFIGURE: information about the datasets in Myria
-SNAPSHOT_LIST=['000045','000054','000072']
+#CONFIGURE: information about the datasets in Myria (first snapshot must be most "recent")
+SNAPSHOT_LIST=['002560','002552','002432']
 USER_NAME="jortiz"
 PROGRAM_NAME="romulustest"
 
-NON_GRP_PARTICLES = '-1'
+NON_GRP_PARTICLES = '0'
 IORDER = 'iOrder'
 #note, might need to change to iord or iOrder
 

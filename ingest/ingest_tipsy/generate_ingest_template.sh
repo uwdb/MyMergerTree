@@ -1,15 +1,14 @@
 #!/bin/bash 
 touch "ingest_all_cosmo.sh"
-# Information about the data
+# CONFIGURE
 DATA_PATH=/disk3/jortiz16/MichaelDatasets/Romulus/romulus8.256gst2.bwBH/
 IORD=iord_2
 GRP=amiga.grp
 SIMULATION_PREFIX=romulus8.256gst2.bwBH.
-SNAPSHOT_LIST=(000045 000054 000072)
-
-# Information about the relation that will be stored in Myria
+SNAPSHOT_LIST=(002560 002552 002432)
 USER_NAME=jortiz
 PROGRAM_NAME=romulustest
+# END CONFIGURE
 
 #clearing old file
 > ingest_all_cosmo.sh

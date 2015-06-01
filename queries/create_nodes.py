@@ -12,13 +12,13 @@ from myria import MyriaSchema
 from myria import MyriaRelation
 
 #CONFIGURE: information about the datasets in Myria
-SNAPSHOT_LIST=['000045','000054','000072']
+SNAPSHOT_LIST=['002560','002552','002432']
 USER_NAME="jortiz"
 PROGRAM_NAME="romulustest"
 
 #parameters
 DM_SOL_UNIT = 7.374469e13
-NON_GRP_PARTICLES = '-1'
+NON_GRP_PARTICLES = '0'
 
 #queries
 #implied: grp, time, mass * dm_sol_unit, totalParticles
@@ -36,7 +36,7 @@ for i in SNAPSHOT_LIST:
 	#dbscan query?
 	current_relation_name =  relation_name_prefix + "cosmo" + i;
 	#after totalParticles, would have extra attributes
-	current_snapshot = "(select s1.grp as grpID," + str(time_count) + "as currentTime, sum(s1.mass) as mass, count(*) as totalParticles from \""+ current_relation_name + "\" as s1 where s1.grp >" + NON_GRP_PARTICLES + " group by s1.grp)"
+	current_snapshot = "(select s1.grp as grpID," + str(time_count) + " as timeStep, sum(s1.mass) as mass, count(*) as totalParticles from \""+ current_relation_name + "\" as s1 where s1.grp >" + NON_GRP_PARTICLES + " group by s1.grp)"
 	if(union_string):
 		union_string = union_string + " UNION " + current_snapshot
 	else:
@@ -76,7 +76,7 @@ else:
 
 #global myrial query
 print "RUNNING GLOBAL NODES"
-global_nodes_query = "T1 = [from scan(" + relation_name_prefix + "nodesLocal) as n emit grpID, timeStep, sum(mass)*" + format(DM_SOL_UNIT, '.1f') + " as mass, sum(totalParticles) as totalParticles]; store(T1, " +  relation_name_prefix +  "nodesTable);"
+global_nodes_query = "T1 = [from scan(" + relation_name_prefix + "nodesLocal) as n emit grpID, timeStep, sum(mass)* " + format(DM_SOL_UNIT, '.1f') + " as mass, sum(totalParticles) as totalParticles]; store(T1, " +  relation_name_prefix +  "nodesTable);"
 query_status = connection.execute_program(program=global_nodes_query)
 query_id = query_status['queryId']
 status = (connection.get_query_status(query_id))['status']
