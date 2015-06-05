@@ -1,7 +1,5 @@
 import sys, os, json
 import time
-lib_path = os.path.abspath(os.path.join('../libs/raco', '../libs/myria-python'))
-sys.path.append(lib_path)
 from raco.catalog import FromFileCatalog
 import raco.myrial.parser as parser
 import raco.myrial.interpreter as interpreter
@@ -25,11 +23,13 @@ edges_table = table_prefix + EDGES_RELATION;
 
 connection = MyriaConnection(hostname = "rest.myria.cs.washington.edu", port=1776, ssl=True, execution_url="https://myria-web.appspot.com")
 
-#first get schemas, create the catalog
+#*****************PART 1***************
+#first get schemas for nodes and edges, and write them to schema.py
 f = open('schema.py', 'w')
 f.write("{" + '\n');
 #--nodes
 current_schema = (MyriaRelation(relation=nodes_table, connection=connection).schema.to_dict())
+print current_schema
 columnNames = [x.encode('utf-8') for x in current_schema['columnNames']]
 columnTypes = [x.encode('utf-8') for x in current_schema['columnTypes']]
 columns = zip(columnNames, columnTypes)
@@ -46,8 +46,7 @@ f.close()
 catalog = FromFileCatalog.load_from_file("schema.py")
 _parser = parser.Parser()
 
-#First Query: take care of the splits -- 
-##(take edges and sort them)
+#Run the first query
 current_query = "T1 = scan("+ edges_table + "); store(T1," + table_prefix + "edgesConnectedSplitSort);"
 
 statement_list = _parser.parse(current_query);
@@ -100,7 +99,7 @@ else:
 	print 'QUERY ERROR'
 
 
-#Second Query: take care of the splits -- 
+#*****************PART 2***************
 print "/*****FINDING PROGENITORS QUERY*****/";
 print "PART 1"
 edges = "edges = scan(" + table_prefix + "edgesTableFinal);"
@@ -148,13 +147,13 @@ if status=='SUCCESS':
 else:
 	print 'QUERY ERROR'
 
-
+#*****************PART 3***************
 print "/*****MAJOR MERGERS QUERY*****/";
 
 edgesTableFinal = table_prefix + "edgesTableFinal"
 haloTableProg = table_prefix + "haloTableProg"
 
-#first get schemas, create the catalog
+#first get schemas for edgesTableFinal and haloTableProg first and then create the catalog
 f = open('schema.py', 'w')
 f.write("{" + '\n');
 #--nodes
@@ -181,7 +180,6 @@ statement_list = _parser.parse(current_query);
 processor = interpreter.StatementProcessor(catalog, True)
 processor.evaluate(statement_list)
 
-#modify and get the plans
 p = processor.get_logical_plan()
 tail = p.args[0].input
 p.args[0].input = alg.Shuffle(tail, [UnnamedAttributeRef(0), UnnamedAttributeRef(1), UnnamedAttributeRef(2)])
@@ -193,7 +191,6 @@ query_status= connection.submit_query(finalplan)
 query_id = query_status['queryId']
 status = (connection.get_query_status(query_id))['status']
 
-#keep checking, sleep a little
 while status!='SUCCESS':
 	status = (connection.get_query_status(query_id))['status']
 	time.sleep(2);
@@ -204,8 +201,6 @@ if status=='SUCCESS':
 	print 'QUERY SUCCESS 1/2'
 else:
 	print 'QUERY ERROR'
-
-#MASS RATIO -- 
 
 runningRank = "apply RunningRank(haloGrp) { [0 as _rank, 0 as _grp]; [case when haloGrp = _grp then _rank + 1 else 1 end, case when haloGrp = _grp then _grp else haloGrp end]; _rank;};"
 haloTable = "haloTable = scan(" + table_prefix + "haloTableProg);"
