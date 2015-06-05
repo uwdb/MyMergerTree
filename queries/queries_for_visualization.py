@@ -29,7 +29,6 @@ f = open('schema.py', 'w')
 f.write("{" + '\n');
 #--nodes
 current_schema = (MyriaRelation(relation=nodes_table, connection=connection).schema.to_dict())
-print current_schema
 columnNames = [x.encode('utf-8') for x in current_schema['columnNames']]
 columnTypes = [x.encode('utf-8') for x in current_schema['columnTypes']]
 columns = zip(columnNames, columnTypes)
