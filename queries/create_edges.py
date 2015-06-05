@@ -1,7 +1,5 @@
 import sys, os, json
 import time
-lib_path = os.path.abspath(os.path.join('../libs/raco', '../libs/myria-python'))
-sys.path.append(lib_path)
 from raco.catalog import FromFileCatalog
 import raco.myrial.parser as parser
 import raco.myrial.interpreter as interpreter
@@ -10,6 +8,9 @@ from raco.expression.expression import UnnamedAttributeRef
 from myria import MyriaConnection
 from myria import MyriaSchema
 from myria import MyriaRelation
+from raco.language.myrialang import compile_to_json
+from raco.scheme import Scheme
+from raco.language.myrialang import MyriaQueryScan
 
 #CONFIGURE: information about the datasets in Myria (first snapshot must be most "recent")
 SNAPSHOT_LIST=['002560','002552','002432']
@@ -18,8 +19,6 @@ PROGRAM_NAME="romulustest"
 
 NON_GRP_PARTICLES = '0'
 IORDER = 'iOrder'
-#note, might need to change to iord or iOrder
-
 #END CONFIGURE
 
 connection = MyriaConnection(hostname = "rest.myria.cs.washington.edu", port=1776, ssl=True, execution_url="https://myria-web.appspot.com")
@@ -39,19 +38,22 @@ for i in range(len(SNAPSHOT_LIST)-1):
 		union_string = current_snapshot
 	time_count = time_count + 1
 
-with open('local_edges_template.json', 'r+') as data_file:    
-    local_nodes_json_query = json.load(data_file)
-    data_file.close()
+catalog = FromFileCatalog.load_from_file("schema.py")
+_parser = parser.Parser()
 
-#make modifications
-local_nodes_json_query['plan']['fragments'][0]['operators'][0]['sql'] = union_string
-local_nodes_json_query['plan']['fragments'][0]['operators'][1]['relationKey']['userName'] = USER_NAME
-local_nodes_json_query['plan']['fragments'][0]['operators'][1]['relationKey']['programName'] = PROGRAM_NAME
-local_nodes_json_query['plan']['fragments'][0]['operators'][1]['relationKey']['relationName'] = 'edgesLocal'
+#Run the first query
+current_query = "T1 = empty(x:int); store(T1, " + relation_name_prefix + "edgesLocal);"
 
-#run local query
+statement_list = _parser.parse(current_query);
+processor = interpreter.StatementProcessor(catalog, True)
+processor.evaluate(statement_list)
+p2 = processor.get_logical_plan()
+p2 = processor.get_physical_plan()
+p2.input = MyriaQueryScan(sql=union_string, scheme=Scheme([('currentGroup', 'LONG_TYPE'), ('currentTime', 'LONG_TYPE'), ('nextGroup', 'LONG_TYPE'), ('sharedParticles','LONG_TYPE')]))
+finalplan = compile_to_json('create edges', p2, p2)
+
 print "RUNNING LOCAL EDGES"
-query_status= connection.submit_query(local_nodes_json_query)
+query_status= connection.submit_query(finalplan)
 query_id = query_status['queryId']
 status = (connection.get_query_status(query_id))['status']
 

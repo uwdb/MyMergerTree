@@ -10,6 +10,9 @@ from raco.expression.expression import UnnamedAttributeRef
 from myria import MyriaConnection
 from myria import MyriaSchema
 from myria import MyriaRelation
+from raco.language.myrialang import compile_to_json
+from raco.scheme import Scheme
+from raco.language.myrialang import MyriaQueryScan
 
 #CONFIGURE: information about the datasets in Myria
 SNAPSHOT_LIST=['002560','002552','002432']
@@ -43,22 +46,22 @@ for i in SNAPSHOT_LIST:
 		union_string = current_snapshot
 	time_count = time_count + 1
 
-#prepare local_nodes schema (if needed, add more attributes in this section)
+catalog = FromFileCatalog.load_from_file("schema.py")
+_parser = parser.Parser()
 
-#write the union at postgres layer (from template query) for local_nodes
-with open('local_nodes_template.json', 'r+') as data_file:    
-    local_nodes_json_query = json.load(data_file)
-    data_file.close()
+#Run the first query
+current_query = "T1 = empty(x:int); store(T1, " + relation_name_prefix + "nodesLocal);"
 
-#make modifications
-local_nodes_json_query['plan']['fragments'][0]['operators'][0]['sql'] = union_string
-local_nodes_json_query['plan']['fragments'][0]['operators'][1]['relationKey']['userName'] = USER_NAME
-local_nodes_json_query['plan']['fragments'][0]['operators'][1]['relationKey']['programName'] = PROGRAM_NAME
-local_nodes_json_query['plan']['fragments'][0]['operators'][1]['relationKey']['relationName'] = 'nodesLocal'
+statement_list = _parser.parse(current_query);
+processor = interpreter.StatementProcessor(catalog, True)
+processor.evaluate(statement_list)
+p2 = processor.get_logical_plan()
+p2 = processor.get_physical_plan()
+p2.input = MyriaQueryScan(sql=union_string, scheme=Scheme([('grpID', 'LONG_TYPE'), ('timeStep', 'LONG_TYPE'), ('mass', 'FLOAT_TYPE'), ('totalParticles','LONG_TYPE')]))
+finalplan = compile_to_json('create nodes', p2, p2)
 
-#run local query
 print "RUNNING LOCAL NODES"
-query_status= connection.submit_query(local_nodes_json_query)
+query_status= connection.submit_query(finalplan)
 query_id = query_status['queryId']
 status = (connection.get_query_status(query_id))['status']
 
