@@ -226,11 +226,6 @@
   <script src="../d3/alert.js"></script>
   <script type="text/javascript">
 
-  //  Use console.log to print stuff to check status
-  var MYRIA_QUERY_URL = "/myria/postquery";
-  var MYRIA_QUERYSTATUS_URL = "/myria/querystatus"
-  var MYRIA_GETDATA_URL = "/myria/getdata";
-
   //define connection string here
   //if myria is down, how can we check?
   connectionString = "";
@@ -308,7 +303,7 @@
 
     switch(queryTypeEnum) {
       case queryType.MERGER_GET_TREE_1:
-      $.get(MYRIA_QUERYSTATUS_URL, {query: queryId}, function(res) {
+      $.get(url_for('myria_status'), {query: queryId}, function(res) {
         // We are just checking that the query queryId finished on myria 
         // We do have to loop on the res.status to make sure we get a result before continuing
         if (res.status != 'SUCCESS') {
@@ -321,17 +316,17 @@
       });
       break;
       case queryType.MERGER_GET_TREE_2:
-      $.get(MYRIA_QUERYSTATUS_URL, {query: queryId}, function(res) {
+      $.get(url_for('myria_status'), {query: queryId}, function(res) {
         if (res.status != 'SUCCESS') {
           tryGetResult(queryId, queryTypeEnum);
         } else {
             // Now we are geting the resulting nodes table from myria
-            $.get(MYRIA_GETDATA_URL, {user: username, program: "myMerger"+program, table: "nodes"}, getSecondMergerTreeQueryResult, 'json');
+            $.get(url_for('myria_data'), {user: username, program: "myMerger"+program, table: "nodes"}, getSecondMergerTreeQueryResult, 'json');
           }
         });
       break;
       case queryType.MERGER_GET_GROUPS:
-      $.get(MYRIA_QUERYSTATUS_URL, {query: queryId}, function(res) {
+      $.get(url_for('myria_status'), {query: queryId}, function(res) {
         if (res.status != 'SUCCESS') {
           tryGetResult(queryId, queryTypeEnum);
         } else {
@@ -341,11 +336,11 @@
       });
       break;
       case queryType.MERGER_GET_TIMESTEPS:
-      $.get(MYRIA_QUERYSTATUS_URL, {query: queryId}, function(res) {
+      $.get(url_for('myria_status'), {query: queryId}, function(res) {
         if (res.status != 'SUCCESS') {
           tryGetResult(queryId, queryTypeEnum);
         } else {
-          $.get(MYRIA_GETDATA_URL, {user: defaultUser, program: "myMerger"+program, table: "unique_timesteps"}, function(res) {
+          $.get(url_for('myria_data'), {user: defaultUser, program: "myMerger"+program, table: "unique_timesteps"}, function(res) {
               getUniqueTimestamps(res);
             }, 'json');
         }
@@ -359,7 +354,7 @@
 
   // After getting the nodes table we are now getting the computed edges table
   var getSecondMergerTreeQueryResult = function(data) {
-    $.get(MYRIA_GETDATA_URL, {user: username, program: "myMerger"+program, table: "edges"}, function(res) {
+    $.get(url_for('myria_data'), {user: username, program: "myMerger"+program, table: "edges"}, function(res) {
       displayMergerTreeResult(data,res);
     }, 'json');
   }
@@ -381,7 +376,7 @@
   //This function queries and populates the list of available group ids
   var populateGroupIdMenu = function(tableName) {
     console.log("inside populateGroupIdMenu");
-    $.get(MYRIA_GETDATA_URL, {user: username, program: 'myMerger' + program, table: tableName}, function(res) {
+    $.get(url_for('myria_data'), {user: username, program: 'myMerger' + program, table: tableName}, function(res) {
       showGroupLoadingIcon(false);
       document.getElementById("mergerTreeGroups").disabled=false;
 
@@ -465,7 +460,7 @@
       queryString: queryString
     };
     console.log(conditions);
-    $.post(MYRIA_QUERY_URL, conditions, function(res) {
+    $.post(url_for('myria_query'), conditions, function(res) {
       // Get the query id.
       if (res.error) {
         displayErrorMessage('Something went wrong getting mass, please try again.');
