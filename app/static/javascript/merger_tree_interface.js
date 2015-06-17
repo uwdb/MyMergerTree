@@ -73,6 +73,8 @@ var validateUserInput = function(callback) {
       return;
   }
   is_input_valid = true;
+  showLoadingIcon(true);
+  //callback (get groupIds) will turn icon off
   return $.get('/verifytables', {nodestable: NODES_RELATION, edgestable: EDGES_RELATION}, function(res) {
     if (res.verified == 'TRUE'){
       $.get('/myriaquery', {querytype: "init_timesteps", nodesTable: NODES_RELATION}, function(res2) {
@@ -82,7 +84,6 @@ var validateUserInput = function(callback) {
           console.log(res2.timesteps);
           setUniqueTimestamps(res2.timesteps);
           callback();
-          alert("SUCCESS");
         }
       });
     } else {
@@ -94,86 +95,26 @@ var validateUserInput = function(callback) {
 var userInputChange = function() {
   var is_input_valid = false;
 }
-//-------------------------- QUERY METHODS ------------------------------//
-
-// This method is used to check for the completion of any query to myria
-var tryGetResult = function(queryId, queryTypeEnum) {
-// Keep enquiring for the query status until the status is success.
-
-switch(queryTypeEnum) {
-  case queryType.MERGER_GET_TREE_1:
-  $.get('/myriastatus', {query: queryId}, function(res) {
-// We are just checking that the query queryId finished on myria 
-// We do have to loop on the res.status to make sure we get a result before continuing
-if (res.status != 'SUCCESS') {
-  tryGetResult(queryId, queryTypeEnum);
-} else {
-// We are now sending the query to compute the edges table
-var queryString = s.sprintf('T1 = SELECT * FROM scan(%s:%s:%s) as R WHERE R.%s=%s; \n store(T1, %s:%s:%s);', defaultUser, program, edgetable, nowGroupAttr, selectedGroup, USERNAME, "myMerger"+program, "edges");
-sendQueryMyria(queryString, queryType.MERGER_GET_TREE_2);
-}
-});
-  break;
-  case queryType.MERGER_GET_TREE_2:
-  $.get('/myriastatus', {query: queryId}, function(res) {
-    if (res.status != 'SUCCESS') {
-      tryGetResult(queryId, queryTypeEnum);
-    } else {
-// Now we are geting the resulting nodes table from myria
-$.get('/myriadata', {user: USERNAME, program: "myMerger"+program, table: "nodes"}, getSecondMergerTreeQueryResult, 'json');
-}
-});
-  break;
-  case queryType.MERGER_GET_GROUPS:
-  $.get('/myriastatus', {query: queryId}, function(res) {
-    if (res.status != 'SUCCESS') {
-      tryGetResult(queryId, queryTypeEnum);
-    } else {
-      console.log('GROUP QUERY FINISHED: queryId ' + queryId);
-      populateGroupIdMenu('GroupIds');
-    }
-  });
-  break;
-  case queryType.MERGER_GET_TIMESTEPS:
-  $.get('/myriastatus', {query: queryId}, function(res) {
-    if (res.status != 'SUCCESS') {
-      tryGetResult(queryId, queryTypeEnum);
-    } else {
-      $.get('/myriadata', {user: defaultUser, program: "myMerger"+program, table: "unique_timesteps"}, function(res) {
-        setUniqueTimestamps(res);
-      }, 'json');
-    }
-  });
-  break;
-  default:
-  displayErrorMessage('Invalid query type.');
-}
-
-};
-
-// After getting the nodes table we are now getting the computed edges table
-var getSecondMergerTreeQueryResult = function(data) {
-  $.get('/myriadata', {user: USERNAME, program: "myMerger"+program, table: "edges"}, function(res) {
-    displayMergerTreeResult(data,res);
-  }, 'json');
-}
 
 // Sets up the query for the merger tree from form data
 var getSelectedMergerTree = function() {
-  document.getElementById('mergerTreeViz').style.display = 'block';
-
+  document.getElementById('mergerTreeViz').style.display = 'none';
   clearPreviousMergerTreeDisplay();
+  showLoadingIcon(true);
   selectedGroup = document.getElementById('mergerTreeGroups').value;
   console.log("sending get_mergertree");
   return $.get('/myriaquery', {querytype: "get_mergertree", user: USERNAME, nodesTable: NODES_RELATION, edgesTable: EDGES_RELATION, nowGroupAttr: nowGroupAttr, group: selectedGroup}, function(res) {
+    showLoadingIcon(false);
     if (res.query_status == 'ERROR') {
       alert("Something went wrong when retrieving the merger tree " + selectedGroup);
+      return;
     } else {
       console.log(res);
       if (res.nodes.length == 0 || res.edges.length == 0) {
         alert('No result for group ' + selectedGroup + '. Must change computation parameters.');
         return;
       }
+      document.getElementById('mergerTreeViz').style.display = 'block';
       populateMergerTree(res.nodes, res.edges);
     }
   });
@@ -206,8 +147,7 @@ var getGroupIds = function() {
   // Clears previous visualization results
   document.getElementById('mergerTreeViz').style.display = 'none';
   clearPreviousMergerTreeDisplay()
-  // displayErrorMessage('');
-  // showGroupLoadingIcon(true);
+  showLoadingIcon(true);
   console.log("Sending Query, range: " + selectedMinMassRange +  " -> " +  selectedMaxMassRange);
   $.get('/myriaquery', {querytype: "get_nowgroups_by_mass", user: USERNAME, nodesTable: NODES_RELATION, timeStepAttr: timeStepAttr, massAttr: massAttr, nowGroupAttr: nowGroupAttr, maxMass: +selectedMaxMassRange, minMass: +selectedMinMassRange}, function(res) {
       populateGroupIdMenu(res);
@@ -217,6 +157,7 @@ var getGroupIds = function() {
 //This function queries and populates the list of available group ids
 var populateGroupIdMenu = function(res) {
   console.log("inside populateGroupIdMenu");
+  showLoadingIcon(false);
   if (res.query_status == 'ERROR') {
     alert('Error in retrieving groups');
     return;
@@ -239,33 +180,6 @@ var populateGroupIdMenu = function(res) {
     .attr("value", function(d){ return d[nowGroupAttr]; })
     .text(function(d) { return d[nowGroupAttr]; });
 };
-
-// Sends query to get group ids
-var sendGroupIdQuery = function(selectedMinMassRange, selectedMaxMassRange) {
-  console.log("Sending Group Query")
-
-  var queryString = s.sprintf('T1 = scan(%s:%s:%s); T2 = [from T1 where %s = 1 and %s <= %.1f and %s >= %.1f emit %s, %s]; store(T2, %s:myMerger%s:GroupIds);', defaultUser, program, NODES_RELATION, timeStepAttr, massAttr, +selectedMaxMassRange, massAttr, +selectedMinMassRange, nowGroupAttr, massAttr, USERNAME, program);
-
-  console.log("JS", queryString);
-  sendQueryMyria(queryString, queryType.MERGER_GET_GROUPS);
-}
-
-var sendQueryMyria = function(queryString, queryType) {
-  var conditions = {
-    queryString: queryString
-  };
-  console.log(conditions);
-  $.post('/myriaquery', conditions, function(res) {
-// Get the query id.
-if (res.error) {
-  displayErrorMessage('Something went wrong getting mass, please try again.');
-  return;
-}
-var queryId = res.queryId;
-console.log('MASS GROUPS QUERY POST: queryId ' + queryId);
-tryGetResult(queryId, queryType);
-}, 'json');
-}
 
 var setUniqueTimestamps = function(res) {
   res.forEach(function(d) {
@@ -329,38 +243,19 @@ var displayErrorMessage = function(message) {
   errorSection.innerHTML = message;
 };
 
-var showVizLoadingIcon = function(show) {
-  var loadingIcon = document.getElementById('resultLoading');
+var showLoadingIcon = function(show) {
+  var loadingIcon = document.getElementById('loadingImg');
   if (show) {
-    loadingIcon.style.display = "";
+    loadingIcon.style.display = "block";
   } else {
     loadingIcon.style.display = "none";
   }
 };
 
-var showGroupLoadingIcon = function(show) {
-  var loadingIcon = document.getElementById('groupLoading');
-  if (show) {
-    loadingIcon.style.display = "";
-  } else {
-    loadingIcon.style.display = "none";
-  }
-};
 
 // For drop down results sorting
 function sortNumber(a,b) {
   return a[nowGroupAttr] - b[nowGroupAttr];
-}
-
-var checkDisableGroups = function() {
-// This function is used to prevent users from not entering a username
-if (document.getElementById('mergerTreeUsername').value == '') {
-  document.getElementById("generateGroupsButton").disabled=true;
-  displayErrorMessage('Username required');
-} else {
-  document.getElementById("generateGroupsButton").disabled=false;
-  displayErrorMessage('');
-}
 }
 
 // When a user changes any of the options used to compute the groups
@@ -376,9 +271,9 @@ var massRangeOptionsChanged = function() {
   var massSelection = document.getElementById("massSelection");
   var massChoice = massSelection.options[massSelection.selectedIndex].text;
   if (massChoice == "Custom") {
-    document.getElementById("customMassRangeOptions").style.display = 'block';
+    document.getElementById("customMassRangeOptions").style.visibility = 'visible';
   } else {
-    document.getElementById("customMassRangeOptions").style.display = 'none';
+    document.getElementById("customMassRangeOptions").style.visibility = 'hidden';
   }
 }
 
@@ -425,49 +320,6 @@ var populateMassRangeDropdown = function() {
   }
 }
 
-//sets up the first merger time option dropdown
-var populateMergerTime1Dropdown = function() {
-  var select = document.getElementById("mergerTime1");
-
-// Parses out each item in the above array and creates
-// an elmement in the mass range selection input for that range
-for (var i = 0; i < timeRanges.length; i++) {
-  var element = document.createElement("option");
-  element.textContent = timeRanges[i];
-  timeRangeTuple = timeRanges[i];
-element.value = timeRangeTuple; // Gets just the number
-select.appendChild(element);
-}
-}
-
-//sets up the second merger time option dropdown
-var populateMergerTime2Dropdown = function() {
-  var select = document.getElementById("mergerTime2");
-
-// Parses out each item in the above array and creates
-// an elmement in the mass range selection input for that range
-for (var i = timeRanges.length; i > 0; i--) {
-  var element = document.createElement("option");
-  element.textContent = timeRanges[i-1];
-  timeRangeTuple = timeRanges[i-1];
-element.value = timeRangeTuple; // Gets just the number
-select.appendChild(element);
-}
-}
-
-var shuffle = function (array) {
-  var m = array.length, t, i;
-// While there remain elements to shuffle
-while (m) {
-// Pick a remaining element
-i = Math.floor(Math.random() * m--);
-// And swap it with the current element.
-t = array[m];
-array[m] = array[i];
-array[i] = t;
-}
-return array;
-}
 
 var YearsToTimestep = function(year) {
   return maxTime - _.indexOf(timeRanges, year);

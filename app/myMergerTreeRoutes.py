@@ -1,8 +1,9 @@
 from app import app
 from app import myMergerTreeQueries as mmt
-from flask import render_template, url_for, redirect, request, session, g, flash, jsonify
+from flask import render_template, url_for, redirect, request, session, g, flash, jsonify, send_from_directory
 import requests
 import json
+import os
 
 # log = logging.getLogger('werkzeug')
 # log.setLevel(logging.DEBUG)
@@ -12,6 +13,11 @@ import json
 @app.route('/index')
 def root():
     return render_template('index.html')
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static', 'images'),
+                               'favicon.ico')
 
 @app.route('/verifytables', methods=['GET'])
 def verify_table_input():
@@ -45,7 +51,7 @@ def myria_query():
     elif qtype == 'get_nowgroups_by_mass':
         nowGroups = mmt.get_nowgroups_by_mass(user=request.args.get('user'), table=request.args.get('nodesTable'), timeStepAttr=request.args.get('timeStepAttr'), nowGroupAttr=request.args.get('nowGroupAttr'), massAttr=request.args.get('massAttr'), minMass=request.args.get('minMass'), maxMass=request.args.get('maxMass'))
         print nowGroups
-        if len(nowGroups) == 0:
+        if nowGroups is None:
             'RETURNING NOWGROUPS FALSE'
             return jsonify(query_status='ERROR')
         else:

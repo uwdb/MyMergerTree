@@ -66,6 +66,11 @@ rect {
   font-family: arial;
 }
 
+#main{
+  font-family:arial;
+  font-size:12px;
+}
+
 #header{
   background: white;
   border: 0px;
@@ -149,7 +154,7 @@ svgBrush {
   font-family:arial;
   font-size:12px;
   padding: 5px 6px;
-  margin: 0px;
+  margin: 0px 0px 8px 0px;
 }
 
 /*style for the image slider*/

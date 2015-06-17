@@ -2,6 +2,8 @@
 <html>
 <head>
   <link rel="stylesheet" type="text/css" href="css/mergerTreeStyle.css">
+  <link rel="stylesheet" type="text/css" href="css/inputStyle.css">
+  <link rel="shortcut icon" href="/favicon.ico">
   <meta charset=utf-8 />
   <title>MyMergerTree</title>
 </head>
@@ -17,10 +19,9 @@
               <label>Username </label>
               <input id="mergerTreeUsername" value="ljorr1" onchange="userInputChange()"></input>
               <label>Nodes Relation </label>
-              <input id="mergerTreeNodesTable" value="jortiz:romulustest:haloTableFinal" onchange="userInputChange()"></input>
+              <input id="mergerTreeNodesTable" value="jortiz:romulustest:haloTableFinal" style="width:250px;" onchange="userInputChange()"></input>
               <label>Edges Relation </label>
-              <input id="mergerTreeEdgesTable" value="jortiz:romulustest:edgesTableFinal" onchange="userInputChange()"></input>
-              <span style="font-size:12px; font-style:italic;">*Required</span>
+              <input id="mergerTreeEdgesTable" value="jortiz:romulustest:edgesTableFinal" style="width:250px;" onchange="userInputChange()"></input>
             </div>
           </td>
         </tr>
@@ -31,8 +32,10 @@
               <label>Mass Range </label>
               <select id="massSelection" onchange="massRangeOptionsChanged()" style = "width: 240px;"></select>
             </div>
-
-            <div id="customMassRangeOptions" style="display: none;">
+            <div id="generateGroupsSection" style="display:inline;">
+              <button class="button" id="generateGroupsButton" onclick='validateUserInput(getGroupIds)'>Generate Groups</button>
+            </div>
+            <div id="customMassRangeOptions" style="display: block; visibility: hidden;">
               <label>Custom Range </label>
               <input id="customMassMin" placeholder=""></input>
               <label>to &nbsp</label>
@@ -54,32 +57,25 @@
         </tr> -->
         <tr>
           <td>
-            <!-- Generate Groups button -->
-            <div id="generateGroupsSection" style="margin-top: 30px;">
-              <button class="button" id="generateGroupsButton" onclick='validateUserInput(getGroupIds)'>Generate Groups</button>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td>
             <!-- Group dropdown -->
-            <div id="groupDropdown" style="margin-bottom: 20px;">
+            <div id="groupDropdown" style="margin-bottom: 10px;">
               <label>Group </label>
-              <select id="mergerTreeGroups" title="Sorted by size, limited to top few hundred" style = "width: 100px;" onfocus="this.selectedIndex = -1;">
+              <select id="mergerTreeGroups" style = "width: 100px;" onfocus="this.selectedIndex = -1;">
               </select>
-            </div>
-            <div style="margin-top: 30px;">
               <button class="button" id="loadGroupTree" onclick="getSelectedMergerTree();">Load Group</button>
             </div>
           </td>
         </tr>
       </table>
     </div>
+    <div>
+      <center><img id="loadingImg" src="images/loading.gif" style="z-index:100; display:none" /></center>
+    </div>
     <div id="mergerTreeViz" style="display: none;">
       <table style="border-spacing: 0.5px;">
         <tr>
           <td>
-            <div id="mergerMassRatio" class = "topContainer" style = "display:inline;">
+            <div id="mergerMassRatio" class ="topContainer" style = "display:inline;">
               <form style="display:inline" onkeypress="return event.keyCode != 13;">Highlight Mass Ratio &#8804;: <input id="textboxMassRatio" type="text"/></form>
               <button class="button" id="buttonMassRatio" onclick='updateMassRatio()'>Update</button> </div>
             </div>

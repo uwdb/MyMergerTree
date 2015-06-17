@@ -46,10 +46,12 @@ def get_nowgroups_by_mass(user, table, timeStepAttr, nowGroupAttr, massAttr, min
     query_status = connection.execute_program(program=queryString)
     query_id = query_status['queryId']
     if not query_successful(query_id):
-        return {}
+        return None
     else:
         print "NO ERROR IN MASS RANGE"
         relation = MyriaRelation('{user:s}:{program:s}:{table2:s}_myMerger_nowGroups'.format(user=user, program=table_program, table2=table_name), connection=connection)
+        t = {}
+        print relation.to_dict(), "vs", t
         return relation.to_dict()
 
 
