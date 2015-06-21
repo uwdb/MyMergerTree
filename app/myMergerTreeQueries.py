@@ -30,10 +30,14 @@ def get_unique_times(table):
         pass
     queryString = ('T1 = DISTINCT([FROM scan({table:s}) as R EMIT R.timeStep]); \n store(T1, {table:s}_unique_timesteps);'.format(table=table))
     print queryString
-    query_status = connection.execute_program(program=queryString)
+    try:
+        query_status = connection.execute_program(program=queryString)
+    except MyriaError:
+        print 'Error in issuing query'
+        return None
     query_id = query_status['queryId']
     if not query_successful(query_id):
-        return {}
+        return None
     else:
         relation = MyriaRelation('{table:s}_unique_timesteps'.format(table=table), connection=connection)
         return relation.to_dict()
@@ -41,17 +45,19 @@ def get_unique_times(table):
 
 def get_nowgroups_by_mass(user, table, timeStepAttr, nowGroupAttr, massAttr, minMass, maxMass):
     [table_user, table_program, table_name] = table.split(':')
-    queryString = 'T1 = DISTINCT([FROM scan({table:s}) as R WHERE R.{timeStepAttr:s} = 1 AND R.{massAttr:s} >= {minMass:f} AND R.{massAttr:s} >= {maxMass:f} EMIT R.{nowGroupAttr:s} as {nowGroupAttr:s}]); \n store(T1, {user:s}:{program:s}:{table2:s}_myMerger_nowGroups);'.format(table=table, nowGroupAttr=nowGroupAttr, timeStepAttr=timeStepAttr, massAttr=massAttr, minMass=float(minMass), maxMass=float(maxMass), user=user, program=table_program, table2=table_name)
+    queryString = 'T1 = DISTINCT([FROM scan({table:s}) as R WHERE R.{timeStepAttr:s} = 1 AND R.{massAttr:s} >= {minMass:f} AND R.{massAttr:s} <= {maxMass:f} EMIT R.{nowGroupAttr:s} as {nowGroupAttr:s}]); \n store(T1, {user:s}:{program:s}:{table2:s}_myMerger_nowGroups);'.format(table=table, nowGroupAttr=nowGroupAttr, timeStepAttr=timeStepAttr, massAttr=massAttr, minMass=float(minMass), maxMass=float(maxMass), user=user, program=table_program, table2=table_name)
     print queryString
-    query_status = connection.execute_program(program=queryString)
+    try:
+        query_status = connection.execute_program(program=queryString)
+    except MyriaError:
+        print 'Error in issuing query'
+        return None
     query_id = query_status['queryId']
     if not query_successful(query_id):
         return None
     else:
         print "NO ERROR IN MASS RANGE"
         relation = MyriaRelation('{user:s}:{program:s}:{table2:s}_myMerger_nowGroups'.format(user=user, program=table_program, table2=table_name), connection=connection)
-        t = {}
-        print relation.to_dict(), "vs", t
         return relation.to_dict()
 
 
@@ -60,10 +66,14 @@ def get_mergertree(user, nodesTable, edgesTable, nowGroupAttr, group):
     [edges_table_user, edges_table_program, edges_table_name] = edgesTable.split(':')
     queryString = 'nodesT = [FROM scan({nodesTable:s}) as R WHERE R.{nowGroupAttr:s} = {group:s} EMIT R.*]; \n store(nodesT, {user:s}:{nodes_table_program:s}:{nodes_table_name:s}_myMerger_nodes); \n edgesT = [FROM scan({edgesTable:s}) as R WHERE R.{nowGroupAttr:s} = {group:s} EMIT R.*]; \n store(edgesT, {user:s}:{edges_table_program:s}:{edges_table_name:s}_myMerger_edges);'.format(user=user, nodesTable=nodesTable, edgesTable=edgesTable, nowGroupAttr=nowGroupAttr, group=group, nodes_table_program=nodes_table_program, nodes_table_name=nodes_table_name, edges_table_program=edges_table_program, edges_table_name=edges_table_name)
     print queryString
-    query_status = connection.execute_program(program=queryString)
+    try:
+        query_status = connection.execute_program(program=queryString)
+    except MyriaError:
+        print 'Error in issuing query'
+        return [None, None]
     query_id = query_status['queryId']
     if not query_successful(query_id):
-        return []
+        return [None, None]
     else:
         print "NO ERROR IN NODES AND EDGES"
         nodes_relation = MyriaRelation('{user:s}:{nodes_table_program:s}:{nodes_table_name:s}_myMerger_nodes'.format(user=user, nodes_table_program=nodes_table_program, nodes_table_name=nodes_table_name), connection=connection)

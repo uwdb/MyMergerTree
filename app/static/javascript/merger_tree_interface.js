@@ -51,6 +51,7 @@ var setUp = function() {
 };
 
 var validateUserInput = function(callback) {
+  console.log("Has user input been validated (ValidateUserInput) " + is_input_valid);
   // if no change to user input, just use callback
   if (is_input_valid) {
     callback();
@@ -60,6 +61,7 @@ var validateUserInput = function(callback) {
   USERNAME = document.getElementById('mergerTreeUsername').value;
   NODES_RELATION = document.getElementById('mergerTreeNodesTable').value;
   EDGES_RELATION = document.getElementById('mergerTreeEdgesTable').value;
+  console.log(USERNAME, NODES_RELATION, EDGES_RELATION);
   if (USERNAME == '' || NODES_RELATION == '' || EDGES_RELATION == '') {
       alert("Must enter a user name, nodes, and edges table");
       return;
@@ -69,7 +71,7 @@ var validateUserInput = function(callback) {
       return;
   }
   if (NODES_RELATION.split(':').length != 3 || EDGES_RELATION.split(':').length != 3) {
-      alert("Nodes and edges relation must be of the form [username]:[program]:[table] \n (see dataset examples on demo.myria.cs.washington.edu)");
+      alert("Nodes and edges relation must be of the form [username]:[program]:[table]. See examples at service.myria.cs.washington.edu.");
       return;
   }
   is_input_valid = true;
@@ -87,22 +89,27 @@ var validateUserInput = function(callback) {
         }
       });
     } else {
-      alert("Must enter a valid user name, program, nodes, and edges table");
+      alert("Must enter a valid nodes and edges table (one of those tables doesn't exist). Check the datasets on service.myria.cs.washington.edu.");
     }
+    showLoadingIcon(false);
   });
 }
 
 var userInputChange = function() {
-  var is_input_valid = false;
+  is_input_valid = false;
 }
 
 // Sets up the query for the merger tree from form data
 var getSelectedMergerTree = function() {
   document.getElementById('mergerTreeViz').style.display = 'none';
   clearPreviousMergerTreeDisplay();
-  showLoadingIcon(true);
   selectedGroup = document.getElementById('mergerTreeGroups').value;
+  if (selectedGroup == '') {
+    alert("Must selected a group id");
+    return;
+  }
   console.log("sending get_mergertree");
+  showLoadingIcon(true);
   return $.get('/myriaquery', {querytype: "get_mergertree", user: USERNAME, nodesTable: NODES_RELATION, edgesTable: EDGES_RELATION, nowGroupAttr: nowGroupAttr, group: selectedGroup}, function(res) {
     showLoadingIcon(false);
     if (res.query_status == 'ERROR') {
@@ -127,8 +134,9 @@ var getGroupIds = function() {
   var massSelection = document.getElementById("massSelection");
   var massChoice = massSelection.options[massSelection.selectedIndex].text;
   if (massChoice == "Custom") {
-    if (document.getElementById('customMassMin').value == '') {
-      displayErrorMessage('Must enter a mass range or select a default');
+    console.log("Custom Mass");
+    if (document.getElementById('customMassMin').value == '' || document.getElementById('customMassMax').value == '') {
+      displayErrorMessage('Must enter an upper and lower bound mass range or select a default');
       return;
     }
     selectedMinMassRange = Number(document.getElementById('customMassMin').value);
@@ -168,7 +176,7 @@ var populateGroupIdMenu = function(res) {
     return;
   }
   if (groups.length > 250) {
-    alert('There are ' + groups.length + ' possible groups, which is more than the browser handle, so we are only showing the first 250');
+    alert('There are ' + groups.length + ' possible groups, which is more than the browser can handle. We show only the first 250 groups by group number.');
     groups = groups.slice(0, 250);
   }
   groups.sort(sortNumber); //order from smallest to largest

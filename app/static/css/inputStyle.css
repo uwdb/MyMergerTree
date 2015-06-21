@@ -1,4 +1,21 @@
-input {
+#main input {
     margin-bottom: 6px;
     margin-right: 12px;
+}
+
+#main{
+  font-family:arial;
+  font-size:12px;
+}
+
+#header{
+  background: white;
+  border: 0px;
+  border-color: gray;
+  border-style: solid;
+  margin: 1px;
+  text-align: center;
+  font-size: 30px;
+  font-weight: bold;
+  font-family: arial;
 }
