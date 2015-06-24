@@ -20,7 +20,7 @@ connection = MyriaConnection(hostname='rest.myria.cs.washington.edu', port=1776,
 
 
 def get_unique_times(table):
-    relation = MyriaRelation('{table:s}_unique_timesteps'.format(table=table), connection=connection)
+    relation = MyriaRelation('{table:s}_uniq_times'.format(table=table), connection=connection)
     try:
         if len(relation) > 0:
             print "Timestep table already exists"
@@ -28,7 +28,7 @@ def get_unique_times(table):
     except MyriaError:
         # relation doesn't exist yet so much create it
         pass
-    queryString = ('T1 = DISTINCT([FROM scan({table:s}) as R EMIT R.timeStep]); \n store(T1, {table:s}_unique_timesteps);'.format(table=table))
+    queryString = ('T1 = DISTINCT([FROM scan({table:s}) as R EMIT R.timeStep]); \n store(T1, {table:s}_uniq_times);'.format(table=table))
     print queryString
     try:
         query_status = connection.execute_program(program=queryString)
@@ -39,13 +39,13 @@ def get_unique_times(table):
     if not query_successful(query_id):
         return None
     else:
-        relation = MyriaRelation('{table:s}_unique_timesteps'.format(table=table), connection=connection)
+        relation = MyriaRelation('{table:s}_uniq_times'.format(table=table), connection=connection)
         return relation.to_dict()
 
 
 def get_nowgroups_by_mass(user, table, timeStepAttr, nowGroupAttr, massAttr, minMass, maxMass):
     [table_user, table_program, table_name] = table.split(':')
-    queryString = 'T1 = DISTINCT([FROM scan({table:s}) as R WHERE R.{timeStepAttr:s} = 1 AND R.{massAttr:s} >= {minMass:f} AND R.{massAttr:s} <= {maxMass:f} EMIT R.{nowGroupAttr:s} as {nowGroupAttr:s}]); \n store(T1, {user:s}:{program:s}:{table2:s}_myMerger_nowGroups);'.format(table=table, nowGroupAttr=nowGroupAttr, timeStepAttr=timeStepAttr, massAttr=massAttr, minMass=float(minMass), maxMass=float(maxMass), user=user, program=table_program, table2=table_name)
+    queryString = 'T1 = DISTINCT([FROM scan({table:s}) as R WHERE R.{timeStepAttr:s} = 1 AND R.{massAttr:s} >= {minMass:f} AND R.{massAttr:s} <= {maxMass:f} EMIT R.{nowGroupAttr:s} as {nowGroupAttr:s}]); \n store(T1, {user:s}:{program:s}:{table2:s}_nowGroups);'.format(table=table, nowGroupAttr=nowGroupAttr, timeStepAttr=timeStepAttr, massAttr=massAttr, minMass=float(minMass), maxMass=float(maxMass), user=user, program=table_program, table2=table_name)
     print queryString
     try:
         query_status = connection.execute_program(program=queryString)
@@ -57,14 +57,14 @@ def get_nowgroups_by_mass(user, table, timeStepAttr, nowGroupAttr, massAttr, min
         return None
     else:
         print "NO ERROR IN MASS RANGE"
-        relation = MyriaRelation('{user:s}:{program:s}:{table2:s}_myMerger_nowGroups'.format(user=user, program=table_program, table2=table_name), connection=connection)
+        relation = MyriaRelation('{user:s}:{program:s}:{table2:s}_nowGroups'.format(user=user, program=table_program, table2=table_name), connection=connection)
         return relation.to_dict()
 
 
 def get_mergertree(user, nodesTable, edgesTable, nowGroupAttr, group):
     [nodes_table_user, nodes_table_program, nodes_table_name] = nodesTable.split(':')
     [edges_table_user, edges_table_program, edges_table_name] = edgesTable.split(':')
-    queryString = 'nodesT = [FROM scan({nodesTable:s}) as R WHERE R.{nowGroupAttr:s} = {group:s} EMIT R.*]; \n store(nodesT, {user:s}:{nodes_table_program:s}:{nodes_table_name:s}_myMerger_nodes); \n edgesT = [FROM scan({edgesTable:s}) as R WHERE R.{nowGroupAttr:s} = {group:s} EMIT R.*]; \n store(edgesT, {user:s}:{edges_table_program:s}:{edges_table_name:s}_myMerger_edges);'.format(user=user, nodesTable=nodesTable, edgesTable=edgesTable, nowGroupAttr=nowGroupAttr, group=group, nodes_table_program=nodes_table_program, nodes_table_name=nodes_table_name, edges_table_program=edges_table_program, edges_table_name=edges_table_name)
+    queryString = 'nodesT = [FROM scan({nodesTable:s}) as R WHERE R.{nowGroupAttr:s} = {group:s} EMIT R.*]; \n store(nodesT, {user:s}:{nodes_table_program:s}:{nodes_table_name:s}_nodes); \n edgesT = [FROM scan({edgesTable:s}) as R WHERE R.{nowGroupAttr:s} = {group:s} EMIT R.*]; \n store(edgesT, {user:s}:{edges_table_program:s}:{edges_table_name:s}_edges);'.format(user=user, nodesTable=nodesTable, edgesTable=edgesTable, nowGroupAttr=nowGroupAttr, group=group, nodes_table_program=nodes_table_program, nodes_table_name=nodes_table_name, edges_table_program=edges_table_program, edges_table_name=edges_table_name)
     print queryString
     try:
         query_status = connection.execute_program(program=queryString)
@@ -76,8 +76,8 @@ def get_mergertree(user, nodesTable, edgesTable, nowGroupAttr, group):
         return [None, None]
     else:
         print "NO ERROR IN NODES AND EDGES"
-        nodes_relation = MyriaRelation('{user:s}:{nodes_table_program:s}:{nodes_table_name:s}_myMerger_nodes'.format(user=user, nodes_table_program=nodes_table_program, nodes_table_name=nodes_table_name), connection=connection)
-        edges_relation = MyriaRelation('{user:s}:{edges_table_program:s}:{edges_table_name:s}_myMerger_edges'.format(user=user, edges_table_program=edges_table_program, edges_table_name=edges_table_name), connection=connection)
+        nodes_relation = MyriaRelation('{user:s}:{nodes_table_program:s}:{nodes_table_name:s}_nodes'.format(user=user, nodes_table_program=nodes_table_program, nodes_table_name=nodes_table_name), connection=connection)
+        edges_relation = MyriaRelation('{user:s}:{edges_table_program:s}:{edges_table_name:s}_edges'.format(user=user, edges_table_program=edges_table_program, edges_table_name=edges_table_name), connection=connection)
         return [nodes_relation.to_dict(), edges_relation.to_dict()]
 
 

@@ -81,7 +81,7 @@ var validateUserInput = function(callback) {
     if (res.verified == 'TRUE'){
       $.get('/myriaquery', {querytype: "init_timesteps", nodesTable: NODES_RELATION}, function(res2) {
         if (res2.query_status == 'ERROR') {
-          alert("Something went wrong when finding the unique timesteps available");
+          alert("Something went wrong when finding the unique timesteps available. Go to service.myria.cs.washington.edu/queries and check query status.");
         } else {
           console.log(res2.timesteps);
           setUniqueTimestamps(res2.timesteps);
@@ -113,7 +113,7 @@ var getSelectedMergerTree = function() {
   return $.get('/myriaquery', {querytype: "get_mergertree", user: USERNAME, nodesTable: NODES_RELATION, edgesTable: EDGES_RELATION, nowGroupAttr: nowGroupAttr, group: selectedGroup}, function(res) {
     showLoadingIcon(false);
     if (res.query_status == 'ERROR') {
-      alert("Something went wrong when retrieving the merger tree " + selectedGroup);
+      alert("Something went wrong when retrieving the merger tree " + selectedGroup + ". Go to service.myria.cs.washington.edu/queries and check query status.");
       return;
     } else {
       console.log(res);
@@ -136,14 +136,14 @@ var getGroupIds = function() {
   if (massChoice == "Custom") {
     console.log("Custom Mass");
     if (document.getElementById('customMassMin').value == '' || document.getElementById('customMassMax').value == '') {
-      displayErrorMessage('Must enter an upper and lower bound mass range or select a default');
+      alert('Must enter an upper and lower bound mass range or select a default.');
       return;
     }
     selectedMinMassRange = Number(document.getElementById('customMassMin').value);
     selectedMaxMassRange = Number(document.getElementById('customMassMax').value);
 
     if (selectedMinMassRange < 0 || selectedMinMassRange >= selectedMaxMassRange) {
-      displayErrorMessage('Must enter a valid mass range');
+      alert('Must enter a valid mass range.');
       return;
     }
   } else { //not custom choice
@@ -165,9 +165,12 @@ var getGroupIds = function() {
 //This function queries and populates the list of available group ids
 var populateGroupIdMenu = function(res) {
   console.log("inside populateGroupIdMenu");
+  // console.log(res);
+
   showLoadingIcon(false);
+
   if (res.query_status == 'ERROR') {
-    alert('Error in retrieving groups');
+    alert('Error in retrieving groups. Go to service.myria.cs.washington.edu/queries and check query status (it may be that the relation name is too long).');
     return;
   }
   groups = res.nowGroups;
@@ -181,11 +184,14 @@ var populateGroupIdMenu = function(res) {
   }
   groups.sort(sortNumber); //order from smallest to largest
 
-  d3.select("#mergerTreeGroups")
+  var optionSelection = d3.select("#mergerTreeGroups")
     .selectAll("option")
-    .data(groups)
-    .enter().append("option")
-    .attr("value", function(d){ return d[nowGroupAttr]; })
+    .data(groups, function(d, i){ return i; });
+
+  optionSelection.exit().remove();
+  optionSelection.enter().append("option");
+
+  optionSelection.attr("value", function(d){ return d[nowGroupAttr]; })
     .text(function(d) { return d[nowGroupAttr]; });
 };
 
@@ -246,11 +252,6 @@ var toggleTooltips = function() {
 
 //-------------------------- PRIVATE UI HELPERS ------------------------------//
 
-var displayErrorMessage = function(message) {
-  var errorSection = document.getElementById('error');
-  errorSection.innerHTML = message;
-};
-
 var showLoadingIcon = function(show) {
   var loadingIcon = document.getElementById('loadingImg');
   if (show) {
@@ -259,7 +260,6 @@ var showLoadingIcon = function(show) {
     loadingIcon.style.display = "none";
   }
 };
-
 
 // For drop down results sorting
 function sortNumber(a,b) {
